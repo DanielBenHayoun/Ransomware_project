@@ -18,3 +18,5 @@ def symbol_frequency(symbol_set):
     bit_set = [round(symbol_set[symbol] * math.log2(symbol_set[symbol]), 5) for symbol in symbol_set]
     entropy = -1 * (round(sum(bit_set), 5))
     return entropy
+
+

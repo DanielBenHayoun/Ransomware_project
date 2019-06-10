@@ -25,7 +25,7 @@ token_url = '{0}{1}'.format(settings['authority'],
                             settings['token_endpoint'])
 
 """need to add also a result if the insert did not succeed"""
-def insert_new_file_to_db(file_id, user_id, entropy):
+def insert_new_file_to_db(file_id, user_id, entropy,extension):
     """ insert a new file into the files table """
     # connect to the PostgreSQL server
     conn = pyodbc.connect(
@@ -34,7 +34,7 @@ def insert_new_file_to_db(file_id, user_id, entropy):
     # create a cursor
     cur = conn.cursor()
 
-    command = f'INSERT INTO files_table (file_id,user_id,entropy) VALUES (\'{file_id}\',\'{user_id}\',\'{entropy}\');'
+    command = f'INSERT INTO files_table (file_id,user_id,entropy) VALUES (\'{file_id}\',\'{user_id}\',\'{entropy}\',\'{extension}\');'
 
     # execute the INSERT statement
     cur.execute(command)
@@ -47,6 +47,28 @@ def insert_new_file_to_db(file_id, user_id, entropy):
     if conn is not None:
         conn.close()
 
+def is_file_in_db(file_id,user_id):
+    conn = pyodbc.connect(
+        'DRIVER=' + driver + ';SERVER=' + server + ';PORT=1433;DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
+
+    cmd = f'SELECT file_id FROM files_table WHERE file_id LIKE \'{file_id}\' AND user_id LIKE \'{user_id}\';'
+
+    cur = conn.cursor()
+    # execute the INSERT statement
+    cur.execute(cmd)
+
+    found = False
+
+    if (cur.fetchone() != None):
+        found =True
+
+    # close communication with the database
+    cur.close()
+
+    if conn is not None:
+        conn.close()
+
+    return found
 
 def delete_file_from_db(file_id,user_id):
     conn = pyodbc.connect(
@@ -56,7 +78,7 @@ def delete_file_from_db(file_id,user_id):
 
     cur=conn.cursor()
     # execute the INSERT statement
-    cur.execute(cmd, (user_id, entropy, file_id))
+    cur.execute(cmd)
 
     # commit the changes to the database
     conn.commit()
@@ -84,6 +106,41 @@ def get_file_entropy_from_db(user_id,file_id):
         conn.close()
 
     return entropy
+
+def set_file_entropy_in_db(user_id,file_id,entropy):
+    conn = pyodbc.connect(
+        'DRIVER=' + driver + ';SERVER=' + server + ';PORT=1433;DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
+
+    cmd = f'UPDATE files_table SET entropy = {entropy} WHERE file_id LIKE \'{file_id}\' AND user_id LIKE \'{user_id}\';'
+
+    cur = conn.cursor()
+    # execute the INSERT statement
+    cur.execute(cmd)
+
+    conn.commit()
+
+    cur.close()
+    if conn is not None:
+        conn.close()
+
+
+def get_file_extension_from_db(user_id, file_id):
+    conn = pyodbc.connect(
+        'DRIVER=' + driver + ';SERVER=' + server + ';PORT=1433;DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
+
+    cmd = f'SELECT extension FROM files_table WHERE file_id LIKE \'{file_id}\' AND user_id LIKE \'{user_id}\';'
+
+    cur = conn.cursor()
+    # execute the INSERT statement
+    cur.execute(cmd)
+
+    ext = cur.fetchone()[0]
+
+    cur.close()
+    if conn is not None:
+        conn.close()
+
+    return ext
 
 def get_user_microsoft_id(subscription_id):
     # connect to the PostgreSQL server
@@ -129,7 +186,10 @@ def get_user_acces_token(user_id):
     return userToken
 
 
-def refresh_token(access_token):
+
+###getting access token , return value -> new access token
+###updating users table with new token
+def refresh_access_token(access_token):
     # connect to the PostgreSQL server
     conn = pyodbc.connect(
         'DRIVER=' + driver + ';SERVER=' + server + ';PORT=1433;DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
@@ -145,20 +205,39 @@ def refresh_token(access_token):
     if (a != None):
         refresh_token_from_table= a[0]
 
+    aad_auth = OAuth2Session(settings['app_id'],
+                             token=refresh_token_from_table,
+                             scope=settings['scopes'],
+                             redirect_uri=settings['redirect'])
+
+    refresh_params = {
+        'client_id': settings['app_id'],
+        'client_secret': settings['app_secret'],
+    }
+    new_token = aad_auth.refresh_token(token_url, refresh_token_from_table, **refresh_params)
+    new_access_token=new_token['access_token']
+    cmd=f'Update users_table SET token =\'{new_access_token}\' WHERE token LIKE \'{access_token}\';'
+    cur.execute(cmd)
+    cur.commit()
     # close the communication with the MySQL
     cur.close()
     if conn is not None:
         conn.close()
-
-    aad_auth = OAuth2Session(settings['app_id'],
-                                     token=refresh_token_from_table,
-                                     scope=settings['scopes'],
-                                     redirect_uri=settings['redirect'])
+    return new_access_token
 
 
-    refresh_params = {
-                'client_id': settings['app_id'],
-                'client_secret': settings['app_secret'],
-            }
-    new_token = aad_auth.refresh_token(token_url, refresh_token_from_table,**refresh_params)
-    return new_token
+def is_honeypot(user_id, DriveItem) :
+    # connect to the SQL server
+    conn = pyodbc.connect(
+        'DRIVER=' + driver + ';SERVER=' + server + ';PORT=1433;DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
+
+    # create a cursor
+    cur = conn.cursor()
+
+    # get refresh_token from db
+    cmd = f'SELECT * FROM files_table WHERE user_id LIKE \'{user_id}\' AND file_id LIKE \'{DriveItem}\';'
+    cur.execute(cmd)
+    a = cur.fetchone()
+    if (a != None):
+        return True
+    return False
