@@ -34,7 +34,7 @@ def insert_new_file_to_db(file_id, user_id, entropy,extension):
     # create a cursor
     cur = conn.cursor()
 
-    command = f'INSERT INTO files_table (file_id,user_id,entropy) VALUES (\'{file_id}\',\'{user_id}\',\'{entropy}\',\'{extension}\');'
+    command = f'INSERT INTO files_table (file_id,user_id,entropy,extension) VALUES (\'{file_id}\',\'{user_id}\',\'{entropy}\',\'{extension}\');'
 
     # execute the INSERT statement
     cur.execute(command)
@@ -98,8 +98,10 @@ def get_file_entropy_from_db(user_id,file_id):
     cur = conn.cursor()
     # execute the INSERT statement
     cur.execute(cmd)
-
-    entropy=cur.fetchone()[0]
+    fetch = cur.fetchone()
+    entropy = 0
+    if (fetch):
+        entropy=fetch[0]
     
     cur.close()
     if conn is not None:
@@ -133,8 +135,11 @@ def get_file_extension_from_db(user_id, file_id):
     cur = conn.cursor()
     # execute the INSERT statement
     cur.execute(cmd)
+    ext = ''
+    fetch = cur.fetchone()
 
-    ext = cur.fetchone()[0]
+    if (fetch):
+        ext = fetch[0]
 
     cur.close()
     if conn is not None:
@@ -153,8 +158,9 @@ def get_user_microsoft_id(subscription_id):
     command = f'SELECT user_id FROM users_table WHERE sub_id LIKE \'{subscription_id}\';'
     cur.execute(command)
     userMicrosoftId = ''
-    if (cur.fetchone() != None):
-        userMicrosoftId = cur.fetchone()[0]
+    fetch = cur.fetchone()
+    if (fetch != None):
+        userMicrosoftId = fetch[0]
 
     # close the communication with the MySQL
     cur.close()
@@ -175,8 +181,9 @@ def get_user_acces_token(user_id):
     command = f'SELECT token FROM users_table WHERE user_id LIKE \'{user_id}\';'
     cur.execute(command)
     userToken = ''
-    if (cur.fetchone()):
-        userToken = cur.fetchone()[0]
+    fetch = cur.fetchone()
+    if (fetch):
+        userToken = fetch[0]
 
     # close the communication with the PostgreSQL
     cur.close()
@@ -235,7 +242,7 @@ def is_honeypot(user_id, DriveItem) :
     cur = conn.cursor()
 
     # get refresh_token from db
-    cmd = f'SELECT * FROM files_table WHERE user_id LIKE \'{user_id}\' AND file_id LIKE \'{DriveItem}\';'
+    cmd = f'SELECT * FROM honeypot_table WHERE user_id LIKE \'{user_id}\' AND file_id LIKE \'{DriveItem}\';'
     cur.execute(cmd)
     a = cur.fetchone()
     if (a != None):

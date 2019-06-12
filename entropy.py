@@ -1,6 +1,12 @@
 import math
 
 
+text1 = "Daniel \nTest1 \nTest2 \nTest3 \nTest4 \nTest5 \ntest6"
+
+text2 = "eX+Sk9L7ibVJ+R/s0nPYW5umwXP22TNz6lAkfH9TV7vOznfg7pmvbfQdVFjju+5OVaCkO1i3hmXBOceo6dpnWg=="
+
+
+
 def shannon_entropy(data):
     stack = {}
     symbol_list = {}
@@ -20,3 +26,4 @@ def symbol_frequency(symbol_set):
     return entropy
 
 
+print(abs(shannon_entropy(text1)-shannon_entropy(text2)))

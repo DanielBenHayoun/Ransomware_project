@@ -18,8 +18,7 @@ def get_file_content(user_id,file_id):
     else:
         headers = {
             "Authorization": 'Bearer ' + get_user_acces_token(user_id),
-            "Host": "graph.microsoft.com",
-            "Content-Type": "application/octet-stream"
+            #"Content-Type": "text/plain"
         }
     url = f"https://graph.microsoft.com/v1.0/users/{user_id}/drive/items/{file_id}/content"
     r = requests.get(url=url,headers=headers)

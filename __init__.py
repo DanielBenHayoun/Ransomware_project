@@ -3,11 +3,10 @@ import azure.functions as func
 from . import detection
 import requests
 from .tables import get_user_microsoft_id, get_user_acces_token, refresh_access_token
-from requests_oauthlib import OAuth2Session
 
 
 #debugging global variable
-DEBUG = True
+DEBUG = False
 
 def get_subscription_ids_from_json(notification_json):
     sub_list = []
@@ -75,6 +74,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 user_id = get_user_microsoft_id(subscription_id)
                 access_token = get_user_acces_token(user_id)
 
+               # until here evetything works
+
             # logging.info(f'{user_id}')
             # logging.info(f'{access_token}')
             headers = {
@@ -108,9 +109,9 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 if (r.status_code != 200):
                     logging.info(r.status_code)
                 changed_files = get_changed_files_ids(r.json())
-                print(changed_files)
                 users_to_changed_files_map[user_id] = changed_files
 
+            #print(changed_files)
             #changed files: tuples of file id and deleted state
             detection.detect(users_to_changed_files_map)
             return func.HttpResponse(status_code=202)
