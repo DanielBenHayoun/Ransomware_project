@@ -28,6 +28,10 @@ token_url = '{0}{1}'.format(settings['authority'],
 def insert_new_file_to_db(file_id, user_id, entropy,extension):
     """ insert a new file into the files table """
     # connect to the PostgreSQL server
+
+    if (is_honeypot(user_id, file_id) == True):
+        return
+
     conn = pyodbc.connect(
         'DRIVER=' + driver + ';SERVER=' + server + ';PORT=1433;DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
 
@@ -192,7 +196,44 @@ def get_user_acces_token(user_id):
 
     return userToken
 
+def get_user_delta_link_from_db(user_id):
+    # connect to the SQL server
+    conn = pyodbc.connect(
+        'DRIVER=' + driver + ';SERVER=' + server + ';PORT=1433;DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
 
+    # create a cursor
+    cur = conn.cursor()
+
+    #get user id from db
+    command = f'SELECT delta_link FROM users_table WHERE user_id LIKE \'{user_id}\';'
+    cur.execute(command)
+    userToken = None
+    fetch = cur.fetchone()
+    if (fetch):
+         userToken = fetch[0]
+
+    # close the communication with the PostgreSQL
+    cur.close()
+    if conn is not None:
+        conn.close()
+
+    return userToken
+
+def set_user_delta_link(user_id,delta_link):
+    conn = pyodbc.connect(
+        'DRIVER=' + driver + ';SERVER=' + server + ';PORT=1433;DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
+
+    cmd = f'UPDATE users_table SET delta_link = \'{delta_link}\' WHERE user_id LIKE \'{user_id}\';'
+
+    cur = conn.cursor()
+    # execute the INSERT statement
+    cur.execute(cmd)
+
+    conn.commit()
+
+    cur.close()
+    if conn is not None:
+        conn.close()
 
 ###getting access token , return value -> new access token
 ###updating users table with new token
@@ -233,7 +274,7 @@ def refresh_access_token(access_token):
     return new_access_token
 
 
-def is_honeypot(user_id, DriveItem) :
+def is_honeypot(user_id, DriveItem):
     # connect to the SQL server
     conn = pyodbc.connect(
         'DRIVER=' + driver + ';SERVER=' + server + ';PORT=1433;DATABASE=' + database + ';UID=' + username + ';PWD=' + password)

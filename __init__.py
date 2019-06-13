@@ -2,7 +2,7 @@ import logging
 import azure.functions as func
 from . import detection
 import requests
-from .tables import get_user_microsoft_id, get_user_acces_token, refresh_access_token
+from .tables import get_user_microsoft_id, get_user_acces_token, refresh_access_token, set_user_delta_link, get_user_delta_link_from_db
 
 
 #debugging global variable
@@ -21,7 +21,7 @@ def get_subscription_ids_from_json(notification_json):
     return sub_list
 
 
-def get_changed_files_ids(delta_json):
+def get_changed_files_ids_from_json(delta_json):
     changed_files = []
 
     for entry in delta_json["value"]:
@@ -36,6 +36,67 @@ def get_changed_files_ids(delta_json):
     return changed_files
 
 
+def process_delta_request_per_user(user_id,access_token):
+    changed_files = [] #list of all changed files in user's drive
+    url = get_user_delta_link_from_db(user_id)
+    if (url == None):
+        url = f'https://graph.microsoft.com/v1.0/users/{user_id}/drive/root/delta'
+
+    headers = {
+        "Authorization": "Bearer " + access_token,
+        "Content-type": "application/json"
+    }
+    r = requests.get(url=url, headers=headers)
+    logging.info(f'Delta request status code: {r.status_code}')
+    if (r.status_code == 200):
+        json_content_of_r = r.json()
+        #print(json_content_of_r)
+        changed_files += get_changed_files_ids_from_json(json_content_of_r)
+        #print(changed_files)
+        nextLink = json_content_of_r["@odata.nextLink"] if "@odata.nextLink" in json_content_of_r else None
+        nextLink_exists = False if nextLink == None else True
+        while (nextLink_exists):
+            url = nextLink
+            r = requests.get(url=url, headers=headers)
+            if (r.status_code == 200):
+                json_content_of_r = r.json()
+                changed_files += get_changed_files_ids_from_json(json_content_of_r)
+                nextLink = json_content_of_r["@odata.nextLink"] if "@odata.nextLink" in json_content_of_r else None
+                nextLink_exists = False if nextLink == None else True
+
+        new_delta_link = json_content_of_r["@odata.deltaLink"]
+        set_user_delta_link(user_id,new_delta_link)
+
+    else:
+        logging.info(f'GET delta failed: Recieved status code is {r.status_code}')
+
+        access_token = refresh_access_token(access_token)
+        headers = {
+            "Authorization": "Bearer " + access_token,
+            "Content-type": "application/json"
+        }
+        r = requests.get(url=url,headers=headers)
+        # shouldn't get inside if statemnet
+        if (r.status_code != 200):
+            logging.info(r.status_code)
+        else:
+            json_content_of_r = r.json()
+            changed_files += get_changed_files_ids_from_json(json_content_of_r)
+            nextLink = json_content_of_r["@odata.nextLink"] if "@odata.nextLink" in json_content_of_r else None
+            nextLink_exists = False if nextLink == None else True
+            while (nextLink_exists):
+                url = nextLink
+                r = requests.get(url=url, headers=headers)
+                if (r.status_code == 200):
+                    json_content_of_r = r.json()
+                    changed_files += get_changed_files_ids_from_json(json_content_of_r)
+                    nextLink = json_content_of_r["@odata.nextLink"] if "@odata.nextLink" in json_content_of_r else None
+                    nextLink_exists = False if nextLink == None else True
+
+            new_delta_link = json_content_of_r["@odata.deltaLink"]
+            set_user_delta_link(user_id, new_delta_link)
+
+    return changed_files
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
@@ -45,12 +106,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     if validation_string:
         return func.HttpResponse(validation_string,status_code=200)
     else:
-        # return func.HttpResponse(
-        #      "Could not retrieve token",
-        #      status_code=400
-        # )
 
-        #logging.info(f'json: {req.get_json()}')
         notification_json = req.get_json()
         subscription_ids_in_notification = []
 
@@ -79,40 +135,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
             # logging.info(f'{user_id}')
             # logging.info(f'{access_token}')
-            headers = {
-                "Authorization" : "Bearer " + access_token,
-                "Content-type" : "application/json"
-            }
-            r = requests.get(url = f'https://graph.microsoft.com/v1.0/users/{user_id}/drive/root/delta', headers=headers)
-            logging.info(r.status_code)
-            if (r.status_code == 200):
-                changed_files = get_changed_files_ids(r.json())
-                users_to_changed_files_map[user_id] = changed_files
-
-            else:
-                logging.info(f'GET delta failed: Recieved status code is {r.status_code}')
-                ###
-                # Daniel added this section:
-                # 1. if error code in response than
-                #  refresh token and try again
-                #
-                #  if there is another error then log it and get out
-                #
-                #TODO: put refresh token inside "get_user_access_token
-                logging.info('SECOND CHANCE')
-                access_token = refresh_access_token(access_token)
-                headers = {
-                    "Authorization": "Bearer " + access_token,
-                    "Content-type": "application/json"
-                }
-                r = requests.get(url=f'https://graph.microsoft.com/v1.0/users/{user_id}/drive/root/delta',headers=headers)
-                # shouldn't get inside if statemnet
-                if (r.status_code != 200):
-                    logging.info(r.status_code)
-                changed_files = get_changed_files_ids(r.json())
-                users_to_changed_files_map[user_id] = changed_files
-
-            #print(changed_files)
+            users_to_changed_files_map[user_id] = process_delta_request_per_user(user_id,access_token)
             #changed files: tuples of file id and deleted state
+            print (users_to_changed_files_map)
             detection.detect(users_to_changed_files_map)
             return func.HttpResponse(status_code=202)
+
+
