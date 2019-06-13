@@ -102,6 +102,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
     validation_string = req.params.get('validationToken')
 
+    #check if the request is the validation from microsoft
     if validation_string:
         return func.HttpResponse(validation_string,status_code=200)
     else:

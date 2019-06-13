@@ -82,7 +82,6 @@ def is_file_blacklisted(user_id, file_id):
     return get_file_extension(user_id,file_id) in ransomware_extension_blacklist
 
 
-
 def is_file_ransomware_file(user_id, file_id):
     return get_file_extension(user_id,file_id) in ransomware_files
 
