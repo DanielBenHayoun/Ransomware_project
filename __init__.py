@@ -41,6 +41,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
     validation_string = req.params.get('validationToken')
 
+    #check if the request is the validation from microsoft
     if validation_string:
         return func.HttpResponse(validation_string,status_code=200)
     else:
@@ -97,7 +98,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 #
                 #  if there is another error then log it and get out
                 #
-
+                #TODO: put refresh token inside "get_user_access_token
                 logging.info('SECOND CHANCE')
                 access_token = refresh_access_token(access_token)
                 headers = {
