@@ -108,7 +108,13 @@ def check_files_blacklisted_per_user(user_id, list_changed_file_ids):
 
 	# if (potential_dangerous_files > 5):
 	# 	return True
-	if(	calculate_buffers(extention_buffer,content_buffer,entropy_buffer,potential_dangerous_files) > 4 ):
+	logging.info(f'extension buffer = {extention_buffer}')
+	logging.info(f'content buffer = {content_buffer}')
+	logging.info(f'entropy buffer = {entropy_buffer}')
+	logging.info(f'potential dangerous files = {potential_dangerous_files}')
+	if (potential_dangerous_files == 0):
+		return False
+	if (calculate_buffers(extention_buffer,content_buffer,entropy_buffer,potential_dangerous_files) > 4):
 		return True
 	return False
 
@@ -133,11 +139,10 @@ def detect(users_to_changed_files_map):
 			if (DEBUG):
 				token = "EwBwA8l6BAAURSN/FHlDW5xN74t6GzbtsBBeBUYAAfcRRYowDdVZ+3RiJHJwa+1Qpe3LJl0pELVeUDTlZhM5s3iaH1iictPsAr/YIwt0xQLPA+qDE+hvsjdfmJYwR6uQmZQ9EONzgrydh6FNtWmEYIN0C58WgPq97VCQvTAu+7ngaqjWrEzYMCccBhOaVy3Wem/hZCmQ9nQUctkF+jvR4Z1yx6T+SDWcvWUugOv4or5ZmePytBOJHAvjPzK+XWHc4boXb7FHYykoNCXQ6PrF0H74RvJ5DOikMb95euaURYqoIGglpbmfXyygaxNDlXhHwyPxF7oBkDkURydXLrGvowPi/1npG2+btOzf2wv48Z8SuUJ3YhpeLH4UnXlxM5ADZgAACDXeEO29FmmYQAKfut0CDEmX3Ive2OOZ2cu7bqCwgGUcGHcHYB7o6tGx4Ioj2FX+Jysoz2mc5Eiwqp9kWtHiHFPjzCnkRzv6DdKNSZKtKcWDdHN57NYPCVbDIYsm7nKom5wosV5UjZgALDVsM4EX3oAjsWackLOExhdYIuvealic+B/8OLcQnLl8TWPL6uMtdbXC0LWsVcq0OXeQSB8msG2S0KL7fF1QITHWorFHEAxaI1ScvZnHATOFTQmUfx1yq9zAxankW0mlOyHFxr+zHRkFu9Dg0jL66YyjWlBPrtN6zlK3fRsdUX3+2R8n6Mr//HSflrtshDFT0tQZNhW0fCY4o0mxuHvtIcrIytozqjayTGDcV3cM0nGrk6fZDi0UkIZ98R3dTbxqdx6H+pYp4OPNyMiwqfWyraumRLLlbGKxofrOQSPuDkZ7DgzbHpr0GgX3ct/+jaSvS3R0P4cHlcyY4aOtGf0eHmQvb/qYVviBzimdGYm6hDw/nk95aq5ard10zfY6rsy7AB9YG26TS0lZyHhT0vshOVOGc5DIkE32OREmbvpP3ZdmAfRQOmoHpjSdgHjNJAya2WNJ6j9vuK0Y2rblOfe/WI03deLtnx6OU7g04HaK/n06FGA6UIAYUfm/gOmO1zu5dWWVPvSZkYbt/V63RDFtAdmy3sLQ4w+Gk+q4wzh/L/mOWOwWWxsGPrpZdIeDkJa1RfCYIWyOq1r+7hIbyi1Su46/fdnpIPdh9BkreEOE+hldUYxaHDbuk+97cufp2MJ49NWPAg=="
 			else:
-				#todo: call refresh token if necessary
 				token = get_user_acces_token(user_id)
 			# send_email to user
-			# user_email = get_user_email(user_id,token)
-			# send_email_to_user(user_email)
+			user_email = get_user_email(user_id,token)
+			send_email_to_user(user_email)
 			print("RANSOMWARE DETECTED!!!")
 		else:
 			print("EVERYTHING IS OKAY")
