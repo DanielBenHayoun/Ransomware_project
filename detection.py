@@ -66,8 +66,8 @@ def check_files_blacklisted_per_user(user_id, list_changed_file_ids):
 		file_inspected = False
 
 		# if file is honeypot, we are under attack
-		#if (is_honeypot(user_id,file_id) == True):
-		#	return True
+		if (is_honeypot(user_id,file_id) == True):
+			return True
 
 		#if file content is dangerous, we are under attack
 		if (extensions.is_file_content_dangerous(user_id,file_id)):
