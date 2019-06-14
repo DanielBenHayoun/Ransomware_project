@@ -5,10 +5,12 @@ from .tables import insert_new_file_to_db, is_honeypot, set_file_entropy_in_db,d
 from .graph_helper import get_file_content,get_user_email
 from .__init__ import DEBUG
 from . import extensions
-
+import logging
 
 def calculate_buffers(extension_buffer , content_buffer, entropy_buffer ,files_num):
-	return (extension_buffer+content_buffer+entropy_buffer)/files_num
+	res=(extension_buffer+content_buffer+entropy_buffer)/files_num
+	logging(f'calculate_buffer')
+	return res
 
 
 def get_changed_entropy(user_id, file_id):
