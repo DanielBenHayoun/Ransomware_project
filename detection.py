@@ -9,7 +9,7 @@ import logging
 
 def calculate_buffers(extension_buffer , content_buffer, entropy_buffer ,files_num):
 	res=(extension_buffer+content_buffer+entropy_buffer)/files_num
-	logging(f'calculate_buffer')
+	logging.info(f'calculate_buffer {res}')
 	return res
 
 
@@ -54,6 +54,7 @@ def send_email_to_user(email):
 
 
 def check_files_blacklisted_per_user(user_id, list_changed_file_ids):
+	logging.info('entered check_files_blacklisted_per_user')
 	under_attack = False
 	extention_buffer=0
 	entropy_buffer=0
@@ -62,44 +63,52 @@ def check_files_blacklisted_per_user(user_id, list_changed_file_ids):
 	potential_dangerous_files = 0
 
 	if (len(list_changed_file_ids) == 0):
+		logging.info('no changed files')
 		return False
-
+	logging.info(f'there is {len((list_changed_file_ids))} changed files')
 	for file_id in list_changed_file_ids:
 		file_inspected = False
 
 		# if file is honeypot, we are under attack
 		if (is_honeypot(user_id,file_id) == True):
+			logging.info('honeypot changed')
 			return True
 
 		#if file content is dangerous, we are under attack
 		if (extensions.is_file_content_dangerous(user_id,file_id)):
+			logging.info('file content is dangerous')
 			content_buffer+=5
 			#return True
 
 		if (is_file_in_db(file_id,user_id) == False):
+			logging.info('new file')
 			# file was not in db before, new to drive
 			content = get_file_content(user_id,file_id)
 			file_entropy = calc_entropy(content)
 			file_extension = extensions.get_file_extension(user_id,file_id)
 			insert_new_file_to_db(file_id,user_id,file_entropy,file_extension)
 			if(extensions.is_file_blacklisted(user_id,file_id)):
+				logging.info('new file has bad extension')
 				extention_buffer+=5
 		else:
 			# file was already in drive
 			# derive information from extensions
+			logging.info('updated file')
 			current_extension = extensions.get_file_extension(user_id,file_id)
 			extension_changed = extensions.is_file_extension_changed(user_id,file_id,current_extension) #bool
 			extension_blacklisted = extensions.is_file_blacklisted(user_id,file_id) #bool
 			temp_entropy=get_changed_entropy(user_id, file_id)
 			# check if current file's extension is blacklisted
 			if (extension_changed and extension_blacklisted):
+				logging.info('updated file has bad extension')
 				potential_dangerous_files += 1
 				file_inspected = True
 				under_attack = True
 				extention_buffer+=2
 
-			if (temp_entropy > 0.8):
+			if (temp_entropy > 0.01):
 				#under_attack = True
+				logging.info('updated file has a big difference entropy')
 				entropy_buffer+=temp_entropy
 				if (file_inspected == False):
 					potential_dangerous_files += 1
