@@ -105,13 +105,13 @@ def check_files_blacklisted_per_user(user_id, list_changed_file_ids):
 				file_inspected = True
 				under_attack = True
 				extention_buffer+=2
-
-			if (temp_entropy > 0.01):
+			#Deniel change: we will accumulate the entropy anyway
+			#if (temp_entropy > 0.01):
 				#under_attack = True
-				logging.info('updated file has a big difference entropy')
-				entropy_buffer+=temp_entropy
-				if (file_inspected == False):
-					potential_dangerous_files += 1
+			logging.info(f'updated file has a entropy {temp_entropy}')
+			entropy_buffer+=temp_entropy
+			if (file_inspected == False):
+				potential_dangerous_files += 1
 			# else:
 			# 	#update entropy in database
 			# 	set_file_entropy_in_db(user_id,file_id,calc_entropy(get_file_content(user_id,file_id)))
@@ -125,7 +125,7 @@ def check_files_blacklisted_per_user(user_id, list_changed_file_ids):
 	logging.info(f'potential dangerous files = {potential_dangerous_files}')
 	if (potential_dangerous_files == 0):
 		return False
-	if (calculate_buffers(extention_buffer,content_buffer,entropy_buffer,potential_dangerous_files) > 4):
+	if (calculate_buffers(extention_buffer,content_buffer,entropy_buffer,potential_dangerous_files) > 0.7):
 		return True
 	return False
 
