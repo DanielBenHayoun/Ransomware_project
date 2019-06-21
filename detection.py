@@ -155,8 +155,8 @@ def detect(users_to_changed_files_map):
 				token = get_user_acces_token(user_id)
 			# send_email to user
 			user_email = get_user_email(user_id,token)
-			print (f'user id = {user_id}')
-			print(f'token = {token}')
+			#print (f'user id = {user_id}')
+			#print(f'token = {token}')
 			print(f'user email: {user_email}')
 			send_email_to_user(user_email)
 			print("RANSOMWARE DETECTED!!!")
