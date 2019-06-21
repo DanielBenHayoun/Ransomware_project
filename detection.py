@@ -7,8 +7,9 @@ from .__init__ import DEBUG
 from . import extensions
 import logging
 
-def calculate_buffers(extension_buffer , content_buffer, entropy_buffer ,files_num):
-	res=(extension_buffer+content_buffer+entropy_buffer)/files_num
+def calculate_buffers(extension_buffer , content_buffer, entropy_buffer ,potential_dangerous_files,files_num):
+	res=(extension_buffer+content_buffer+entropy_buffer*files_num)/files_num
+	res+=potential_dangerous_files
 	logging.info(f'calculate_buffer {res}')
 	return res
 
@@ -103,19 +104,20 @@ def check_files_blacklisted_per_user(user_id, list_changed_file_ids):
 				logging.info('updated file has bad extension')
 				potential_dangerous_files += 1
 				file_inspected = True
-				under_attack = True
+				#under_attack = True
 				extention_buffer+=2
 			#Deniel change: we will accumulate the entropy anyway
 			#if (temp_entropy > 0.01):
 				#under_attack = True
 			logging.info(f'updated file has a entropy {temp_entropy}')
 			entropy_buffer+=temp_entropy
-			if (file_inspected == False):
-				potential_dangerous_files += 1
-			# else:
+			logging.info(f'entropy buffer {entropy_buffer}')
+			# if (file_inspected == False):
+			# 	potential_dangerous_files += 1
+			# # else:
 			# 	#update entropy in database
 			# 	set_file_entropy_in_db(user_id,file_id,calc_entropy(get_file_content(user_id,file_id)))
-				set_file_entropy_in_db(user_id, file_id, calc_entropy(get_file_content(user_id, file_id)))
+			set_file_entropy_in_db(user_id, file_id, calc_entropy(get_file_content(user_id, file_id)))
 
 	# if (potential_dangerous_files > 5):
 	# 	return True
@@ -123,9 +125,9 @@ def check_files_blacklisted_per_user(user_id, list_changed_file_ids):
 	logging.info(f'content buffer = {content_buffer}')
 	logging.info(f'entropy buffer = {entropy_buffer}')
 	logging.info(f'potential dangerous files = {potential_dangerous_files}')
-	if (potential_dangerous_files == 0):
-		return False
-	if (calculate_buffers(extention_buffer,content_buffer,entropy_buffer,potential_dangerous_files) > 0.7):
+	# if (potential_dangerous_files == 0):
+	# 	return False
+	if (calculate_buffers(extention_buffer,content_buffer,entropy_buffer,potential_dangerous_files,len((list_changed_file_ids))) > 0.55):
 		return True
 	return False
 
