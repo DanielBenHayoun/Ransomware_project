@@ -37,5 +37,9 @@ def get_user_email(user_id,access_token):
     url = f"https://graph.microsoft.com/v1.0/users/{user_id}"
     r = requests.get(url = url, headers = headers)
     if r.status_code == 200:
-        return r.json()["mail"]
+        json_content = r.json()
+        if json_content["userPrincipalName"] == None:
+            return json_content["mail"]
+        else:
+            return json_content["userPrincipalName"]
     return None
