@@ -85,6 +85,8 @@ def check_files_blacklisted_per_user(user_id, list_changed_file_ids):
 			# file was not in db before, new to drive
 			content = get_file_content(user_id,file_id)
 			file_entropy = calc_entropy(content)
+			if(file_entropy>5.4237):
+				entropy_buffer+=2
 			file_extension = extensions.get_file_extension(user_id,file_id)
 			insert_new_file_to_db(file_id,user_id,file_entropy,file_extension)
 			if(extensions.is_file_blacklisted(user_id,file_id)):
@@ -131,7 +133,7 @@ def check_files_blacklisted_per_user(user_id, list_changed_file_ids):
 	logging.info(f'potential dangerous files = {potential_dangerous_files}')
 	# if (potential_dangerous_files == 0):
 	# 	return False
-	if (calculate_buffers(extention_buffer,content_buffer,entropy_buffer,potential_dangerous_files,len((list_changed_file_ids))) > 0.55):
+	if (calculate_buffers(extention_buffer,content_buffer,entropy_buffer,potential_dangerous_files,len((list_changed_file_ids))) > 1.0537):
 		return True
 	return False
 
