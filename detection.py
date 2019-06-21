@@ -25,19 +25,18 @@ def get_changed_entropy(user_id, file_id):
 	return abs(new_entropy - old_entropy)
 
 def remove_deleted_files_from_changed_list(user_id,changed_list):
-	i = 0
-	indices_to_remove = []
+
+	changed_list2 = []
 	# list of files contains tuples of file id & deleted state (true/false)
 	for tup in changed_list:
 		file_id = tup[0]
 		deleted = tup[1]
 		if deleted == True:
 			delete_file_from_db(file_id, str(user_id))
-			indices_to_remove.append(i)
-		i+=1
+		else:
+			changed_list2.append(tup)
 
-	for idx in indices_to_remove:
-		changed_list.pop(idx)
+	changed_list = changed_list2
 
 
 def get_list_of_changed_updated_files(changed_list):
@@ -91,6 +90,11 @@ def check_files_blacklisted_per_user(user_id, list_changed_file_ids):
 			if(extensions.is_file_blacklisted(user_id,file_id)):
 				logging.info('new file has bad extension')
 				extention_buffer+=5
+			compressed = extensions.is_file_compressed(user_id,file_id)
+			if (file_entropy > 7.99 and not compressed):
+				under_attack = True
+			if (file_entropy > 7.997 and compressed):
+				under_attack = True
 		else:
 			# file was already in drive
 			# derive information from extensions
