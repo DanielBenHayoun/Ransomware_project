@@ -11,8 +11,9 @@
 ## Project in Firewalls - 236499 - Spring 2019
 Detect and response to ransomware via cloud service
 
-Daniel Ben-Hayoun 
-Ayelet Kazantsev 
+#### Daniel Ben-Hayoun 
+
+#### Ayelet Kazantsev 
 
 ### **full project report:**
 
